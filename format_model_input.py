@@ -53,8 +53,10 @@ def get_date_span(date):
         return 3
     elif '2016-01-01 00:00:00' <= date < '2016-07-01 00:00:00':
         return 4
-    else:
+    elif '2016-07-01 00:00:00' <= date < '2017-03-01 00:00:00':
         return 5
+    else:
+        return -1
 
 
 def output_data(eastern, forest_data, electricity_data, source_data, dict_data, writer):
@@ -67,6 +69,9 @@ def output_data(eastern, forest_data, electricity_data, source_data, dict_data, 
     :param dict_data: 字典 key是 企业和政府部门组合 value是row的列表
     :param writer: 输出流
     """
+    if len(dict_data) == 0:
+        return
+    print len(dict_data)
     # 每次外层循环输出一次
     for key, value in dict_data.items():
         # reply_count表示政府回应的微博数
@@ -137,7 +142,7 @@ def format_model_input(input_path, output_path):
                         '贵州': 1903.99, '云南': 2692.54, '西藏': 54.48, '陕西': 1757.41, '甘肃': 1214.33,
                         '青海': 552.96, '宁夏': 1144.38, '新疆': 2719.13}
 
-    titles = ['地方政府回应(Y)', '微博投诉(X)', '污染所在地区(S)', '人均国内生产总值(PGDP)', '企业特征(Enterprise)',
+    titles = ['地方政府回应数(Y)', '微博投诉@数(X)', '污染所在地区(S)', '人均国内生产总值(PGDP)', '企业特征(Enterprise)',
               '总转发量(Forward_all)', '总评论量(Comment_all)', '总点赞量(Praise_all)',
               '平均转发量(Forward)', '平均评论量(Comment)', '平均点赞量(Praise)',
               '中央/上级政府关注(Position)', '森林覆盖率(Forest)', '工业发电量(Industry)', '年份(year)', '平均回应时间/秒(Diff)']
@@ -155,6 +160,7 @@ def format_model_input(input_path, output_path):
         if first_row:
             first_row = False
         required_data.append(r)
+    required_data.sort(key=lambda x: x[0])  # 按时间升序排序
 
     current_date_span = 0
     span_data = {}  # 满足条件的数据 key是 企业和政府部门组合 value是row的列表
@@ -162,11 +168,13 @@ def format_model_input(input_path, output_path):
         row = required_data[i]
         # 检查是否在这个时间区间 每个时间区间会输出一次
         if get_date_span(row[0]) != current_date_span:
+            # print 'current_date_span' + str(current_date_span)
+            # print 'next_date_span' + str(get_date_span(row[0]))
             current_date_span = get_date_span(row[0])
             output_data(eastern, forest_data, electricity_data, required_data, span_data, writer)
             span_data = {}
         # 检查所有@的政府账号和时间涉及的企业 作为key
-        for at in row[33].split('_'):
+        for at in row[31].split('_'):
             key = row[5] + '_' + at
             if span_data.get(key, []):
                 span_data.get(key).append(i)

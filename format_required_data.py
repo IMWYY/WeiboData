@@ -15,9 +15,10 @@ import json
 
 25中央政府是否@政府帐号	26中央政府表述内容	    27上级政府是否@政府帐号	28上级政府表述内容   29下级政府是否@政府帐号	30下级政府表述内容
 
-31对政府部门帐号投诉@的数量(指半年针对某一国控企业问题对某一政府部门@的数量)
-32政府部门回应比例(指回应“对政府部门帐号投诉@的数量”的比例)
-33@的政府账号
+31@的政府账号
+32政府回应次数 
+33对政府部门帐号投诉@的数量(指半年针对某一国控企业问题对某一政府部门@的数量)
+34政府部门回应比例(指回应“对政府部门帐号投诉@的数量”的比例)
 
 注：政府部门级别  三类，即省级（直辖市、自治区）；市级（地级市、地区、自治州、盟）；县级（市辖区、县、自治县、县级市、旗、自治旗、林区、特区）
 
@@ -149,7 +150,7 @@ def format_data(output_path):
               '政府评论内容', '政府部门是否发布回应通告', '通告内容',
               '中央政府是否@政府帐号', '中央政府表述内容', '上级政府是否@政府帐号', '上级政府表述内容',
               '下级政府是否@政府帐号', '下级政府表述内容',
-              '对政府部门帐号投诉@的数量', '政府部门回应比例', '@的政府账号']
+               '@的政府账号', '政府回应次数(包括转发反@评论通告)','对政府部门帐号投诉@的数量', '政府部门回应比例']
     out = open(output_path, 'w')
     writer = csv.writer(out)
     writer.writerow(titles)
@@ -158,7 +159,7 @@ def format_data(output_path):
     count = 0
 
     for weibo in weibo_at_data:
-        line = ['' for i in xrange(34)]
+        line = ['' for i in xrange(35)]
         line[0] = weibo[5]  # 发布时间
         line[1] = weibo[0]  # 微博用户
         line[3] = weibo[1]  # 投诉发帖内容
@@ -197,7 +198,7 @@ def format_data(output_path):
                     at_accounts.append(at[1:])
                 else:
                     at_accounts.append('_' + at[1:])
-        line[33] = ''.join(at_accounts)
+        line[31] = ''.join(at_accounts)
 
         # 如果微博发布时间比最晚的回复时间还要晚 直接退出
         if not no_reply and weibo[5] > gov_reply_data[len(gov_reply_data) - 1][5]:
@@ -238,7 +239,7 @@ def format_data(output_path):
                         count += 1
                         print '转发' + str(count)
 
-                    # 初始化回应为否
+                    # 初始化中央政府回应为否
                     line[25] = line[27] = line[29] = 0
 
                     # 中央政府回应
@@ -289,6 +290,12 @@ def format_data(output_path):
                                 line[29] = 1
                                 line[30] = reply[1]
                                 break
+            reply_count = 0
+            reply_count += (1 if line[17] == 1 else 0)
+            reply_count += (1 if line[19] == 1 else 0)
+            reply_count += (1 if line[21] == 1 else 0)
+            reply_count += (1 if line[23] == 1 else 0)
+            line[32] = reply_count
             writer.writerow(line)
             print_list(line)
     print 'all' + str(count)

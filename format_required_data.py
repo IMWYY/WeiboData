@@ -1,5 +1,9 @@
 # -*- coding:utf-8 -*-
 
+import csv
+import datetime
+import json
+
 """
 0发布时间	        1微博用户	            2用户类型	                3投诉发帖内容	            4评论内容/链接
 5涉及国控企业名称	6国控企业法人编号     7污染所在地（尽量精确）	    8污染所在地行政区编号	    9转发量
@@ -13,6 +17,7 @@
 
 31对政府部门帐号投诉@的数量(指半年针对某一国控企业问题对某一政府部门@的数量)
 32政府部门回应比例(指回应“对政府部门帐号投诉@的数量”的比例)
+33@的政府账号
 
 注：政府部门级别  三类，即省级（直辖市、自治区）；市级（地级市、地区、自治州、盟）；县级（市辖区、县、自治县、县级市、旗、自治旗、林区、特区）
 
@@ -21,17 +26,18 @@
 2* S           污染所在地区      (东部地区为1、中西部地区为0)
 3  PGDP        人均国内生产总值
 4  Enterprise  企业特征
-5* Forward     转发量
-6* Comment     评论量
-7* Praise      点赞量
-8* Position    中央/上级政府关注  (@地方政府微博帐号表征为1，若无@则表征为0)
-9* Forest      森林覆盖率
-10*Industry    工业发电量
-11*year         年份
+5* Forward_all     总转发量
+6* Comment_all     总评论量
+7* Praise_all      总点赞量
+8* Forward     平均转发量
+9* Comment     平均评论量
+10* Praise      平均点赞量
+11* Position    中央/上级政府关注  (@地方政府微博帐号表征为1，若无@则表征为0)
+12* Forest      森林覆盖率
+13*Industry    工业发电量
+14*year        年份
+15*Diff        平均回应时间
 """
-import csv
-import datetime
-import json
 
 
 def time_in_range(x, y):
@@ -98,11 +104,10 @@ def get_enterprise_data(enterprise_path):
     """
     获取企业数据 包括法人编号 所在地 所在地行政编号
     """
-    # todo
     enterprise_data = {}
     enterprise_reader = csv.reader(open(enterprise_path, 'r'))
     for row in enterprise_reader:
-        enterprise_data[row[0]] = row
+        enterprise_data[row[0]] = [row[5], row[1], row[2]]
     return enterprise_data
 
 
@@ -134,8 +139,8 @@ def format_data(output_path):
     gov_account_level_data = get_gov_level_data('data/gov_accounts.csv')
     # 获取评论的数据
     comment_data = get_comment_data('data/weiboComment_format.csv')
-    # todo 企业数据 包括法人编号 所在地 所在地行政编号
-    # enterprise_data = get_enterprise_data('data/enterprise2015.csv')
+    # 企业数据 包括法人编号 所在地 所在地行政编号
+    enterprise_data = get_enterprise_data('data/enterprise.csv')
 
     titles = ['发布时间', '微博用户', '用户类型', '投诉发帖内容', '评论内容/链接', '涉及国控企业名称', '国控企业法人编号',
               '污染所在地', '污染所在地行政区编号', '转发量', '评论量', '点赞量',
@@ -144,7 +149,7 @@ def format_data(output_path):
               '政府评论内容', '政府部门是否发布回应通告', '通告内容',
               '中央政府是否@政府帐号', '中央政府表述内容', '上级政府是否@政府帐号', '上级政府表述内容',
               '下级政府是否@政府帐号', '下级政府表述内容',
-              '对政府部门帐号投诉@的数量', '政府部门回应比例']
+              '对政府部门帐号投诉@的数量', '政府部门回应比例', '@的政府账号']
     out = open(output_path, 'w')
     writer = csv.writer(out)
     writer.writerow(titles)
@@ -153,16 +158,23 @@ def format_data(output_path):
     count = 0
 
     for weibo in weibo_at_data:
-        line = ['' for i in xrange(32)]
+        line = ['' for i in xrange(34)]
         line[0] = weibo[5]  # 发布时间
         line[1] = weibo[0]  # 微博用户
         line[3] = weibo[1]  # 投诉发帖内容
         line[4] = weibo[6]  # 评论内容/链接
         line[5] = weibo[7]  # 涉及国控企业名称
-        # enterprise_detail = enterprise_data[weibo[7]]
-        # line[6] = enterprise_detail[0]  # 国控企业法人编号
-        # line[7] = enterprise_detail[1]  # 污染所在地
-        # line[8] = enterprise_detail[2]  # 污染所在地行政区编号
+
+        enterprise_detail = enterprise_data.get(weibo[7], [])
+        if enterprise_detail:
+            line[6] = enterprise_detail[0]  # 国控企业法人编号
+            line[7] = enterprise_detail[1]  # 污染所在地
+            line[8] = enterprise_detail[2]  # 污染所在地行政区编号
+        else:
+            line[6] = 'unknown'  # 国控企业法人编号
+            line[7] = 'unknown'  # 污染所在地
+            line[8] = 'unknown'  # 污染所在地行政区编号
+
         line[9] = weibo[4]  # 转发量
         line[10] = weibo[3]  # 评论量
         line[11] = weibo[2]  # 点赞量
@@ -174,6 +186,18 @@ def format_data(output_path):
         if comment_detail and len(comment_detail) > 14:
             line[21] = 1
             line[22] = comment_detail[14]
+
+        # 处理@的政府账号 用_分割
+        at_accounts = []
+        first_line = True
+        for at in weibo[11:len(weibo) - 1]:
+            if len(at) > 1 and gov_account_level_data.get(at[1:], '无') != '无':
+                if first_line:
+                    first_line = False
+                    at_accounts.append(at[1:])
+                else:
+                    at_accounts.append('_' + at[1:])
+        line[33] = ''.join(at_accounts)
 
         # 如果微博发布时间比最晚的回复时间还要晚 直接退出
         if not no_reply and weibo[5] > gov_reply_data[len(gov_reply_data) - 1][5]:
@@ -268,14 +292,6 @@ def format_data(output_path):
             writer.writerow(line)
             print_list(line)
     print 'all' + str(count)
-
-
-def test():
-    # 企业数据 包括法人编号 所在地 所在地行政编号
-    data = {}
-    data['tt'] = [0, 2]
-    data['t'] = 'test'
-    print data.get('tt')[1]
 
 
 format_data('data/required_data.csv')

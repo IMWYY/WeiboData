@@ -136,10 +136,10 @@ def format_data(output_path):
     weibo_at_data = get_weibo_data('data/weiboAt.csv')
     # 政府回应的数据
     gov_reply_data = get_gov_reply_data('data/govReply.csv')
-    # 政府账号级别的数据
-    gov_account_level_data = get_gov_level_data('data/gov_accounts.csv')
     # 获取评论的数据
     comment_data = get_comment_data('data/weiboComment_format.csv')
+    # 政府账号级别的数据
+    gov_account_level_data = get_gov_level_data('data/gov_accounts.csv')
     # 企业数据 包括法人编号 所在地 所在地行政编号
     enterprise_data = get_enterprise_data('data/enterprise.csv')
 
@@ -155,7 +155,6 @@ def format_data(output_path):
     writer = csv.writer(out)
     writer.writerow(titles)
 
-    no_reply = False
     count = 0
 
     for weibo in weibo_at_data:
@@ -182,12 +181,6 @@ def format_data(output_path):
 
         line[12] = line[17] = line[19] = line[21] = line[23] = 0  # 初始化政府回应为否
 
-        # 评论数据 todo 多条政府评论数据处理 选择哪一条？
-        comment_detail = comment_data.get(weibo[0].strip() + weibo[5], [])
-        if comment_detail and len(comment_detail) > 14:
-            line[21] = 1
-            line[22] = comment_detail[14]
-
         # 处理@的政府账号 用_分割
         at_accounts = []
         first_line = True
@@ -200,104 +193,103 @@ def format_data(output_path):
                     at_accounts.append('_' + at[1:])
         line[31] = ''.join(at_accounts)
 
-        # 如果微博发布时间比最晚的回复时间还要晚 直接退出
-        if not no_reply and weibo[5] > gov_reply_data[len(gov_reply_data) - 1][5]:
-            no_reply = True
-        if no_reply:
-            writer.writerow(line)
-            print_list(line)
-            print 'no reply and more'
-        else:
-            for reply in gov_reply_data:
-                # 在回复的时间范围内 且 原微博@到该回复账号 且 涉及企业相同
-                if time_in_range(reply[5], weibo[5]) and ('@' + reply[0]) in weibo[11:len(weibo) - 1] \
-                        and weibo[7] == reply[7]:
+        # todo 多条政府评论数据处理 选择哪一条？
+        # 评论数据 12评论账号 13评论时间 14评论内容
+        comment_detail = comment_data.get(weibo[0].strip() + weibo[5], [])
+        if comment_detail and len(comment_detail) > 14:
+            line[21] = 1  # 是否评论
+            line[22] = comment_detail[14]  # 评论内容
+            line[12] = 1  # 12政府部门是否回应
+            line[13] = gov_account_level_data.get(comment_detail[12], '无')  # 政府部门的级别
+            line[14] = 1  # 14是否是环保部门 目前默认是环保部门
+            line[15] = comment_detail[13]  # 15政府部门回应时间
+            line[16] = abs(get_date_diff(comment_detail[13], weibo[5]))  # 16政府部门回应时差
 
-                    line[12] = 1  # 12政府部门是否回应
-                    line[13] = gov_account_level_data.get(reply[0], '无')  # 政府部门的级别
-                    line[14] = 1  # 14是否是环保部门 目前默认是环保部门
-                    line[15] = reply[5]  # 15政府部门回应时间
-                    line[16] = get_date_diff(reply[5], weibo[5])  # 16政府部门回应时差
+        # 反@ 发布通告（没有@的回应）转发
+        for reply in gov_reply_data:
+            # 在回复的时间范围内 且 原微博@到该回复账号 且 涉及企业相同
+            if time_in_range(reply[5], weibo[5]) and ('@' + reply[0]) in weibo[11:len(weibo) - 1] \
+                    and weibo[7] == reply[7]:
 
-                    # 反@
-                    if ('@' + weibo[0]) in reply[11:]:
-                        line[17] = 1  # 17政府部门是否反@
-                        line[18] = reply[1]  # 18政府部门反@帖子内容
-                        count += 1
-                        print '反@' + str(count)
-                    # 发布通告（没有@的回应）
-                    else:
-                        line[23] = 1
-                        line[24] = reply[1]  # 24通告内容
-                        count += 1
-                        print '发布通告' + str(count)
+                line[12] = 1  # 12政府部门是否回应
+                line[13] = gov_account_level_data.get(reply[0], '无')  # 政府部门的级别
+                line[14] = 1  # 14是否是环保部门 目前默认是环保部门
+                line[15] = reply[5]  # 15政府部门回应时间
+                line[16] = get_date_diff(reply[5], weibo[5])  # 16政府部门回应时差
 
-                    # 转发 (回复是转发 且 (转发自原博主或转发自原博主转发自的博主))
-                    if reply[8] == 1 and (reply[9] == weibo[0] or (weibo[8] == 1 and reply[9] == weibo[9])):
-                        line[19] = 1
-                        line[20] = reply[10]
-                        count += 1
-                        print '转发' + str(count)
+                # 反@
+                if ('@' + weibo[0]) in reply[11:]:
+                    line[17] = 1  # 17政府部门是否反@
+                    line[18] = reply[1]  # 18政府部门反@帖子内容
+                    count += 1
+                    print '反@' + str(count)
+                # 发布通告（没有@的回应）
+                else:
+                    line[23] = 1
+                    line[24] = reply[1]  # 24通告内容
+                    count += 1
+                    print '发布通告' + str(count)
 
-                    # 初始化中央政府回应为否
-                    line[25] = line[27] = line[29] = 0
+                # 转发 (回复是转发 且 (转发自原博主或转发自原博主转发自的博主))
+                if reply[8] == 1 and (reply[9] == weibo[0] or (weibo[8] == 1 and reply[9] == weibo[9])):
+                    line[19] = 1
+                    line[20] = reply[10]
+                    count += 1
+                    print '转发' + str(count)
 
-                    # 中央政府回应
-                    if reply[0] == '环保部发布':
-                        line[25] = 1
-                        line[26] = reply[1]
+                # 初始化中央政府回应为否
+                line[25] = line[27] = line[29] = 0
 
-                    # 上级回应下级
-                    if gov_account_level_data.get(reply[0], '无') == '省':
-                        for account in reply[11:]:
-                            if len(account) > 1 and (gov_account_level_data.get(account[1:], '无') == '市'
-                                                     or gov_account_level_data.get(account[1:], '无') == '县'):
-                                line[27] = 1
-                                line[28] = reply[1]
-                                break
-                    elif gov_account_level_data.get(reply[0], '无') == '市':
-                        for account in reply[11:]:
-                            if len(account) > 1 and gov_account_level_data.get(account[1:], '无') == '县':
-                                line[27] = 1
-                                line[28] = reply[1]
-                                break
-                    elif reply[0] == '环保部发布':
-                        for account in reply[11:]:
-                            if len(account) > 1 and gov_account_level_data.get(account[1:], '无') != '无':
-                                line[27] = 1
-                                line[28] = reply[1]
-                                break
+                # 中央政府回应
+                if reply[0] == '环保部发布':
+                    line[25] = 1
+                    line[26] = reply[1]
 
-                    # 下级回应上级
-                    if gov_account_level_data.get(reply[0], '无') == '县':
-                        for account in reply[11:]:
-                            if len(account) > 1 and (gov_account_level_data.get(account[1:], '无') == '市'
-                                                     or gov_account_level_data.get(account[1:], '无') == '省'
-                                                     or account == '@环保部发布'):
-                                line[29] = 1
-                                line[30] = reply[1]
-                                break
-                    elif gov_account_level_data.get(reply[0], '无') == '市':
-                        for account in reply[11:]:
-                            if len(account) > 1 and (gov_account_level_data.get(account[1:], '无') == '省'
-                                                     or account == '@环保部发布'):
-                                line[29] = 1
-                                line[30] = reply[1]
-                                break
-                    elif gov_account_level_data.get(reply[0], '无') == '省':
-                        for account in reply[11:]:
-                            if account == '@环保部发布':
-                                line[29] = 1
-                                line[30] = reply[1]
-                                break
-            reply_count = 0
-            reply_count += (1 if line[17] == 1 else 0)
-            reply_count += (1 if line[19] == 1 else 0)
-            reply_count += (1 if line[21] == 1 else 0)
-            reply_count += (1 if line[23] == 1 else 0)
-            line[32] = reply_count
-            writer.writerow(line)
-            print_list(line)
+                # 上级回应下级
+                if gov_account_level_data.get(reply[0], '无') == '省':
+                    for account in reply[11:]:
+                        if len(account) > 1 and (gov_account_level_data.get(account[1:], '无') == '市'
+                                                 or gov_account_level_data.get(account[1:], '无') == '县'):
+                            line[27] = 1
+                            line[28] = reply[1]
+                elif gov_account_level_data.get(reply[0], '无') == '市':
+                    for account in reply[11:]:
+                        if len(account) > 1 and gov_account_level_data.get(account[1:], '无') == '县':
+                            line[27] = 1
+                            line[28] = reply[1]
+                elif reply[0] == '环保部发布':
+                    for account in reply[11:]:
+                        if len(account) > 1 and gov_account_level_data.get(account[1:], '无') != '无':
+                            line[27] = 1
+                            line[28] = reply[1]
+
+                # 下级回应上级
+                if gov_account_level_data.get(reply[0], '无') == '县':
+                    for account in reply[11:]:
+                        if len(account) > 1 and (gov_account_level_data.get(account[1:], '无') == '市'
+                                                 or gov_account_level_data.get(account[1:], '无') == '省'
+                                                 or account == '@环保部发布'):
+                            line[29] = 1
+                            line[30] = reply[1]
+                elif gov_account_level_data.get(reply[0], '无') == '市':
+                    for account in reply[11:]:
+                        if len(account) > 1 and (gov_account_level_data.get(account[1:], '无') == '省'
+                                                 or account == '@环保部发布'):
+                            line[29] = 1
+                            line[30] = reply[1]
+                elif gov_account_level_data.get(reply[0], '无') == '省':
+                    for account in reply[11:]:
+                        if account == '@环保部发布':
+                            line[29] = 1
+                            line[30] = reply[1]
+        reply_count = 0
+        reply_count += (1 if line[17] == 1 else 0)
+        reply_count += (1 if line[19] == 1 else 0)
+        reply_count += (1 if line[21] == 1 else 0)
+        reply_count += (1 if line[23] == 1 else 0)
+        line[32] = reply_count
+        writer.writerow(line)
+        print_list(line)
     print 'all' + str(count)
 
 

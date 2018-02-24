@@ -83,8 +83,9 @@ def output_data(gov_account_level, enterprise_data, eastern, forest_data, electr
 
         keys = key.split("_")
         enterprise_detail = enterprise_data.get(keys[0], [])
-        account_level = gov_account_level.get(keys[1], ['unknown']),
-        account_level = account_level[0]
+        account_level_info = gov_account_level.get(keys[1], ['unknown', 'unknown']),
+        account_level = account_level_info[0][0]
+        account_area = account_level_info[0][1]
         if not enterprise_detail or not account_level:
             continue
 
@@ -127,7 +128,7 @@ def output_data(gov_account_level, enterprise_data, eastern, forest_data, electr
             writer.writerow([y, x, round(y / float(x) if x > 0 else 0, 4),  # '地方政府回应数(Y)', '微博投诉@数(X)', '@回应比例',
                              reply_count, count, round(reply_count / count, 4),
                              s, '', '',
-                             keys[1], account_level, keys[0],
+                             keys[1], account_level, account_area, keys[0],
                              enterprise_detail[0], enterprise_detail[1], enterprise_detail[2],
                              forward, comment, praise,
                              round(forward / count, 4), round(comment / count, 4), round(praise / count, 4),
@@ -143,11 +144,11 @@ def get_gov_level_data(gov_account_path):
     gov_account_reader = csv.reader(open(gov_account_path, 'r'))
     for row in gov_account_reader:
         if '省' in row[2]:
-            gov_account_data[row[0]] = '省'
+            gov_account_data[row[0]] = ['省', row[4]]
         elif '市' in row[2]:
-            gov_account_data[row[0]] = '市'
+            gov_account_data[row[0]] = ['市', row[4]]
         else:
-            gov_account_data[row[0]] = '县'
+            gov_account_data[row[0]] = ['县', row[4]]
     return gov_account_data
 
 
@@ -171,7 +172,7 @@ def format_model_input(input_path, output_path):
     titles = ['地方政府回应数(Y)', '微博投诉@数(X)', '@回应比例',
               '地方政府回应的投诉发帖数', '投诉发帖数', '投诉回应比例',
               '污染所在地区(S)', '人均国内生产总值(PGDP)', '企业特征(Enterprise)',
-              '政府部门', '政府部门级别', '企业名称', '法人编号', '污染所在地', '行政编号',
+              '政府部门', '政府部门级别', '行政区划', '企业名称', '法人编号', '污染所在地', '行政编号',
               '总转发量(Forward_all)', '总评论量(Comment_all)', '总点赞量(Praise_all)',
               '平均转发量(Forward)', '平均评论量(Comment)', '平均点赞量(Praise)',
               '中央/上级政府关注(Position)', '森林覆盖率(Forest)', '工业发电量(Industry)',
@@ -230,6 +231,7 @@ def format_model_input(input_path, output_path):
         # print 'row[31]' + row[31]
         for at in row[31].split('_'):
             if not at:  # 剔除没有@那315个政府账号的帖子
+                print '--------' + row[31]
                 continue
             key = row[5] + '_' + at
             # print 'key' + key

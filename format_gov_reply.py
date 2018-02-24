@@ -105,15 +105,30 @@ def correspond_reply(weibo_at, gov_reply, output):
     print count
 
 
-def test():
-    temp = []
-    tt = [0, 2, 3]
-    temp.append(tt)
-    tt = [4, 5, 6]
-    print temp
+def filter_reply(input_path, output_path):
+    """
+    筛选政府回复 只将315部分账号的回复留下来
+    :param input_path:
+    :param output_path:
+    :return:
+    """
+    # 政府账号的数据
+    gov_account_data = []
+    gov_account_reader = csv.reader(open('data/gov_accounts.csv', 'r'))
+    for row in gov_account_reader:
+        gov_account_data.append(row[0])
+
+    weibo_at_data = []
+    reader = csv.reader(open(input_path, 'r'))
+    writer = csv.writer(open(output_path, 'w'))
+    for row in reader:
+        if row[0] in gov_account_data:
+            writer.writerow(row)
+
 
 # correspond_reply('data/weiboAt.csv', 'data/govReply.csv', 'data/at_and_reply.csv')
 # correspond_reply('data/weiboAt2015.csv', 'data/govReply2015.csv', 'data/at_and_reply2015.csv')
 # correspond_reply('data/weiboAt2016.csv', 'data/govReply2016.csv', 'data/at_and_reply2016.csv')
 # correspond_reply('data/weiboAt2017.csv', 'data/govReply2017.csv', 'data/at_and_reply2017.csv')
-# test()
+
+filter_reply('data/govReply.csv', 'data/govReply_filtered.csv')

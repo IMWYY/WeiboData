@@ -118,12 +118,13 @@ def filter_reply(input_path, output_path):
     for row in gov_account_reader:
         gov_account_data.append(row[0])
 
-    weibo_at_data = []
     reader = csv.reader(open(input_path, 'r'))
     writer = csv.writer(open(output_path, 'w'))
     for row in reader:
         if row[0] in gov_account_data:
             writer.writerow(row)
+        else:
+            print row[0]
 
 
 # correspond_reply('data/weiboAt.csv', 'data/govReply.csv', 'data/at_and_reply.csv')

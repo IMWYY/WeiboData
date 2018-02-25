@@ -18,7 +18,7 @@ def format_gov_account(input_path, output_path):
     writer.writerow(titles)
 
     for row in reader:
-        addr = province = city = county = area = ''
+        province = city = county = area = ''
         match_obj = re.match(
             r'.*?((北京)|(天津)|(河北)|(辽宁)|(上海)|(江苏)|(浙江)|(福建)|(山东)|(广东)|'
             r'(海南)|(山西)|(吉林)|(黑龙江)|(安徽)|(江西)|(河南)|(湖北)|(湖南)|(四川)|(重庆)|'

@@ -13,8 +13,10 @@ import re
 
 25中央政府是否@政府帐号	26中央政府表述内容	    27上级政府是否@政府帐号	28上级政府表述内容   29下级政府是否@政府帐号	30下级政府表述内容
 
-31对政府部门帐号投诉@的数量(指半年针对某一国控企业问题对某一政府部门@的数量)
-32政府部门回应比例(指回应“对政府部门帐号投诉@的数量”的比例)
+31@的政府账号
+32政府回应次数 
+33对政府部门帐号投诉@的数量(指半年针对某一国控企业问题对某一政府部门@的数量)
+34政府部门回应比例(指回应“对政府部门帐号投诉@的数量”的比例)
 
 注：政府部门级别  三类，即省级（直辖市、自治区）；市级（地级市、地区、自治州、盟）；县级（市辖区、县、自治县、县级市、旗、自治旗、林区、特区）
 
@@ -74,20 +76,26 @@ def output_data(gov_account_level, enterprise_data, eastern, forest_data, electr
     if len(dict_data) == 0:
         return
     print len(dict_data)
-    # 每次外层循环输出一次
+    # 每次外层循环输出一次 key是 企业_政府账号 value是微博帖子数组下标的列表
     for key, value in dict_data.items():
         # 初始化数据
         s = diff = position = y = x = forward = praise = comment = 0
         forest = industry = year = ''
-        count = reply_count = 0.0
+        weibo_count = reply_count = 0.0
 
+        # 政府和企业的数据
         keys = key.split("_")
-        enterprise_detail = enterprise_data.get(keys[0], [])
-        account_level_info = gov_account_level.get(keys[1], ['unknown', 'unknown']),
-        account_level = account_level_info[0][0]
-        account_area = account_level_info[0][1]
-        if not enterprise_detail or not account_level:
+        enterprise = keys[0]
+        government = keys[1]
+        enterprise_detail = enterprise_data.get(enterprise, [])  # 法人编号 所在地 所在地行政编号
+        account_level_detail = gov_account_level.get(government, ['unknown', 'unknown']),
+        gov_level = account_level_detail[0][0]
+        gov_area = account_level_detail[0][1]
+        if not enterprise_detail:
             continue
+        enterprise_legal = enterprise_detail[0]
+        enterprise_area = enterprise_detail[1]
+        enterprise_area_code = enterprise_detail[2]
 
         first_line = True
         for index in value:
@@ -96,7 +104,8 @@ def output_data(gov_account_level, enterprise_data, eastern, forest_data, electr
                 continue
 
             reply_count += (1 if row[12] == '1' else 0)  # 政府回应的微博数
-            count += 1  # 微博投诉数
+            weibo_count += 1  # 微博投诉数
+
             # 首次处理不需要遍历累加的变量 所在地 森林覆盖率 工业发电量 年份
             if first_line:
                 first_line = False
@@ -104,19 +113,22 @@ def output_data(gov_account_level, enterprise_data, eastern, forest_data, electr
                     r'.*?((北京)|(天津)|(河北)|(辽宁)|(上海)|(江苏)|(浙江)|(福建)|(山东)|(广东)|'
                     r'(海南)|(山西)|(吉林)|(黑龙江)|(安徽)|(江西)|(河南)|(湖北)|(湖南)|(四川)|(重庆)|'
                     r'(贵州)|(云南)|(西藏)|(陕西)|(甘肃)|(青海)|(宁夏)|(新疆)|(广西)|(内蒙古)).*?',
-                    row[7], re.M | re.I)
+                    enterprise_area, re.M | re.I)
                 if match_obj:
                     province = match_obj.group(1)
                 else:
                     continue
                 s = (1 if province in eastern else 0)  # 污染所在地区 东部地区为1、中西部地区为0
+                # print province + ' ' + str(s)
                 forest = forest_data.get(province, 0)  # 森林覆盖率
                 industry = electricity_data.get(province, 0)  # 工业发电量
-                year = row[0][:4]
+                year = row[0][:4]  # 年份
+
             forward += int(row[9])  # 总转发量
             praise += int(row[11])  # 总点赞量
             comment += int(row[10])  # 总评论量
-            x += len(row[33].split('_'))  # 微博投诉@的数量
+            # x += len(row[31].split('_'))  # 微博投诉@的数量
+            x += (len(row[31].split('_')) if row[31] else 0)  # 微博投诉@的数量
             y += (1 if row[17] == '1' else 0)  # 地方政府回应的数量
             y += (1 if row[19] == '1' else 0)
             y += (1 if row[21] == '1' else 0)
@@ -124,15 +136,16 @@ def output_data(gov_account_level, enterprise_data, eastern, forest_data, electr
             position += (1 if row[25] == '1' else 0)  # 中央/上级政府关注
             position += (1 if row[27] == '1' else 0)
             diff += (float(row[16]) if row[12] == '1' else 0)  # 回应时差
-        if count > 0:
+        if weibo_count > 0:
             writer.writerow([y, x, round(y / float(x) if x > 0 else 0, 4),  # '地方政府回应数(Y)', '微博投诉@数(X)', '@回应比例',
-                             reply_count, count, round(reply_count / count, 4),
+                             reply_count, weibo_count, round(reply_count / weibo_count, 4),
                              s, '', '',
-                             keys[1], account_level, account_area, keys[0],
-                             enterprise_detail[0], enterprise_detail[1], enterprise_detail[2],
+                             government, gov_level, gov_area, enterprise,
+                             enterprise_legal, enterprise_area, enterprise_area_code,
                              forward, comment, praise,
-                             round(forward / count, 4), round(comment / count, 4), round(praise / count, 4),
-                             round(position / count, 4), forest, industry,
+                             round(forward / weibo_count, 4), round(comment / weibo_count, 4),
+                             round(praise / weibo_count, 4),
+                             round(position / weibo_count, 4), forest, industry,
                              year, (round(diff / reply_count, 4) if reply_count > 0 else 0)])
 
 
@@ -228,13 +241,12 @@ def format_model_input(input_path, output_path):
                         span_data, writer)
             span_data = {}
         # 检查所有@的政府账号和时间涉及的企业 作为key
-        # print 'row[31]' + row[31]
+        if not row[31]:  # 剔除没有@那315个政府账号的帖子
+            continue
         for at in row[31].split('_'):
-            if not at:  # 剔除没有@那315个政府账号的帖子
-                print '--------' + row[31]
+            if not at:
                 continue
             key = row[5] + '_' + at
-            # print 'key' + key
             if span_data.get(key, []):
                 span_data.get(key).append(i)
             else:
@@ -242,4 +254,5 @@ def format_model_input(input_path, output_path):
 
 
 # print get_date_span('2016-09-09 23:55:33')
+# format_model_input('data/required_data.csv', 'data/model_input.csv')
 format_model_input('data/required_data.csv', 'data/model_input.csv')

@@ -144,7 +144,7 @@ def format_data(output_path):
     # 微博@的数据
     weibo_at_data = get_weibo_data('data/weiboAt.csv')
     # 政府回应的数据
-    gov_reply_data = get_gov_reply_data('data/govReply.csv')
+    gov_reply_data = get_gov_reply_data('data/govReply_filtered.csv')
     # 获取评论的数据
     comment_data = get_comment_data('data/weiboComment_format.csv')
     # 政府账号级别的数据
@@ -167,6 +167,10 @@ def format_data(output_path):
     count = 0
 
     for weibo in weibo_at_data:
+        print_list(weibo)
+        if not weibo:
+            continue
+
         line = ['' for i in xrange(35)]
         line[0] = weibo[5]  # 发布时间
         line[1] = weibo[0]  # 微博用户

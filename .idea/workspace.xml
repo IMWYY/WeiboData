@@ -1,16 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="32793897-7005-45e9-81ac-40f6676344be" name="Default" comment="Revert &quot;add: git ignore&quot;&#10;&#10;This reverts commit f23401b783dc9bfc7aad77967d980f83f471288b.">
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/.idea/WeiboData.iml" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/.idea/dictionaries/stephen.xml" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/.idea/misc.xml" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/.idea/modules.xml" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/.idea/preferred-vcs.xml" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/.idea/vcs.xml" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/data/model_input.csv" />
+    <list default="true" id="32793897-7005-45e9-81ac-40f6676344be" name="Default" comment="">
+      <change type="DELETED" beforePath="$PROJECT_DIR$/.idea/WeiboData.iml" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/.idea/dictionaries/stephen.xml" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/.idea/misc.xml" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/.idea/modules.xml" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/.idea/preferred-vcs.xml" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/.idea/vcs.xml" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="" />
       <change type="DELETED" beforePath="$PROJECT_DIR$/doc/2014-2016年工业发电量.xls" afterPath="" />
       <change type="DELETED" beforePath="$PROJECT_DIR$/doc/2015国家重点监控.xlsx" afterPath="" />
       <change type="DELETED" beforePath="$PROJECT_DIR$/doc/2016国家重点监控.xlsx" afterPath="" />
@@ -441,7 +440,14 @@
       <option name="project" value="LOCAL" />
       <updated>1519701283511</updated>
     </task>
-    <option name="localTasksCounter" value="9" />
+    <task id="LOCAL-00009" summary="add:add ignore">
+      <created>1519701722110</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1519701722110</updated>
+    </task>
+    <option name="localTasksCounter" value="10" />
     <servers />
   </component>
   <component name="TodoView">
@@ -547,7 +553,8 @@
     <MESSAGE value="add: add pgdp and enterprise characteristics" />
     <MESSAGE value="add: add new model input" />
     <MESSAGE value="add: git ignore" />
-    <option name="LAST_COMMIT_MESSAGE" value="add: git ignore" />
+    <MESSAGE value="add:add ignore" />
+    <option name="LAST_COMMIT_MESSAGE" value="add:add ignore" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>

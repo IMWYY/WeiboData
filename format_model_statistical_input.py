@@ -110,6 +110,7 @@ def output_data(PGDP_data, gov_account_level, enterprise_data, eastern, forest_d
         enterprise_industry_code = enterprise_detail[10]
         enterprise_output = enterprise_detail[11]
         enterprise_hours = enterprise_detail[12]
+        market = enterprise_detail[13]
 
         first_line = True
         for index in value:
@@ -147,7 +148,7 @@ def output_data(PGDP_data, gov_account_level, enterprise_data, eastern, forest_d
         if weibo_count > 0:
             writer.writerow([y, x, round(y / float(x) if x > 0 else 0, 4),  # '地方政府回应数(Y)', '微博投诉@数(X)', '@回应比例',
                              reply_count, weibo_count, round(reply_count / weibo_count, 4),
-                             s, pgdp, enterprise_status, enterprise_type, enterprise_scale, enterprise_industry,
+                             s, pgdp, enterprise_status, market, enterprise_type, enterprise_scale, enterprise_industry,
                              enterprise_industry_code, enterprise_output, enterprise_hours,
                              government, gov_level, gov_location, enterprise,
                              enterprise_legal, enterprise_location, enterprise_area_code,
@@ -167,7 +168,7 @@ def format_model_input(input_path, output_path):
     titles = ['地方政府回应数(Y)', '微博投诉@数(X)', '@回应比例',
               '地方政府回应的投诉发帖数', '投诉发帖数', '投诉回应比例',
               '污染所在地区(S)', '人均国内生产总值(PGDP)',
-              '企业状态', '登记注册类型', '企业规模', '行业类别代码', '行业类别名称', '工业总产值当年价格万元', '年正常生产时间小时',
+              '企业状态', '是否上市', '登记注册类型', '企业规模', '行业类别代码', '行业类别名称', '工业总产值当年价格万元', '年正常生产时间小时',
               '政府部门', '政府部门级别', '行政区划', '企业名称', '法人编号', '污染所在地', '行政编号',
               '总转发量(Forward_all)', '总评论量(Comment_all)', '总点赞量(Praise_all)',
               '平均转发量(Forward)', '平均评论量(Comment)', '平均点赞量(Praise)',
@@ -226,5 +227,4 @@ def format_model_input(input_path, output_path):
                 span_data[key] = [i]
 
 
-# print get_date_span('2016-09-09 23:55:33')
 format_model_input('data/required_data.csv', 'data/model_input_statistical.csv')

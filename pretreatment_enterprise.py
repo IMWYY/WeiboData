@@ -42,17 +42,59 @@ def format_enterprise():
     print count
 
 
+def format_market_enterprise():
+    """
+    将国控上市企业企业名称干扰的关键字去除 如有限公司等
+    :return:
+    """
+    # 打开文件
+    reader = csv.reader(open('data/market_enterprise.csv', 'r'))
+    # 关键字文件
+    keyword = open('data/market_enterprise_new.csv', 'w')
+    writer = csv.writer(keyword)
+
+    count = 0
+    for line in reader:
+        name = line[2]
+        if not name:
+            continue
+        try:
+            if name.index("有限公司") > 0:
+                line[2] = name[0:name.index("有限公司")]
+                writer.writerow(line)
+                count += 1
+        except ValueError:
+            try:
+                if name.index("有限责任公司") > 0:
+                    line[2] = name[0:name.index("有限责任公司")]
+                    writer.writerow(line)
+                    count += 1
+            except ValueError:
+                try:
+                    if name.index("污水处理厂") > 0:
+                        writer.writerow(line)
+                except ValueError:
+                    writer.writerow(line)
+                    count += 1
+    print count
+
+
 def format_enterprise_characteristics(output_path):
     """
     将企业特征信息和企业信息整合到一起 信息包括：
     企业名称,地点,行政编号,年份,污染类型,法人编号,
-    企业状态,登记注册类型,企业规模,行业类别代码,行业类别名称,工业总产值当年价格万元,年正常生产时间小时
+    企业状态,登记注册类型,企业规模,行业类别代码,行业类别名称,工业总产值当年价格万元,年正常生产时间小时, 是否上市
     """
     # 打开文件
     enterprise_reader = csv.reader(open('data/enterprise.csv', 'r'))
     characteristics_reader = csv.reader(open('data/enterprise_characteristics.csv', 'r'))
+    market_reader = csv.reader(open('data/market_enterprise_new.csv', 'r'))
 
     writer = csv.writer(open(output_path, 'w'))
+
+    market_enterprise = []
+    for row in market_reader:
+        market_enterprise.append(row[2])
 
     characteristics_data = {}
     characteristics_data8 = {}
@@ -62,16 +104,23 @@ def format_enterprise_characteristics(output_path):
             continue
         code = row[3].replace('-', '').replace('(', '').replace(')', '').replace(' ', '')
         if code and len(code) >= 9:
-            characteristics_data[code[:9]] = row
+            temp = characteristics_data.get(code[:9])
+            if not (temp and temp[6]):
+                characteristics_data[code[:9]] = row
         if code and len(code) >= 8:
-            characteristics_data8[code[:8]] = row
+            temp = characteristics_data.get(code[:8])
+            if not (temp and temp[6]):
+                characteristics_data8[code[:8]] = row
         if code and len(code) >= 7:
-            characteristics_data7[code[:7]] = row
+            temp = characteristics_data.get(code[:7])
+            if not (temp and temp[6]):
+                characteristics_data7[code[:7]] = row
 
     count = 0
     all_count = 0
     for row in enterprise_reader:
         all_count += 1
+        market = 1 if row[0] in market_enterprise else 0  # 是否上市
         key = row[5][:9] if len(row[5]) > 9 else row[5]
         characteristics = characteristics_data.get(key)
         if not characteristics:
@@ -80,12 +129,12 @@ def format_enterprise_characteristics(output_path):
             characteristics = characteristics_data7.get(key)
         if not characteristics:
             print key
-            writer.writerow([row[0], row[1], row[2], row[3], row[4], row[5], '', '', '', '', '', '', ''])
+            writer.writerow([row[0], row[1], row[2], row[3], row[4], row[5], '', '', '', '', '', '', '', market])
             count += 1
         else:
             writer.writerow([row[0], row[1], row[2], row[3], row[4], row[5], characteristics[5], characteristics[6],
                              characteristics[7], characteristics[8], characteristics[9],
-                             characteristics[10], characteristics[11]])
+                             characteristics[10], characteristics[11], market])
     print count
     print all_count
 
@@ -107,5 +156,6 @@ def format_PGDP():
         # print count
 
 
-# format_enterprise_characteristics('data/enterprise_new.csv')
-format_PGDP()
+format_enterprise_characteristics('data/enterprise_new.csv')
+# format_PGDP()
+# format_market_enterprise()

@@ -15,6 +15,7 @@ from data_helper import time_in_range
 from data_helper import get_date_diff
 from data_helper import get_pgdp
 from data_helper import get_PGDP_data
+from data_helper import get_user_data
 from data_helper import print_list
 
 """
@@ -229,4 +230,58 @@ def format_list_input(output_path):
     print 'all' + str(count)
 
 
-format_list_input('data/model_input_list.csv')
+def add_extra_info(output_path):
+    """
+    在model_list_input添加用户信息('微博用户', '是否认证') 和 '是否上市'
+    :param output_path:
+    :return:
+    """
+    user_data = get_user_data('data/all_user.csv')
+    reader = csv.reader(open('data/model_input_list.csv', 'r'))
+
+    titles = ['发布时间', '微博用户', '是否认证', '认证类型(机构/个人)', '投诉发帖内容', '评论内容/链接',
+              '涉及国控企业名称', '国控企业法人编号', '污染所在地', '污染所在地行政区编号', '污染所在地区(东部、中西部)',
+              '企业状态', '是否上市', '登记注册类型', '企业规模', '行业类别名称', '行业类别代码', '工业总产值当年价格万元', '年正常生产时间小时',
+              '森林覆盖率', '工业发电量', '人均国内生产总值', '转发量', '评论量', '点赞量',
+              '政府部门是否回应', '政府部门', '政府部门级别', '行政区划', '是否是环保部门', '政府部门回应时间', '政府部门回应时差(s)',
+              '政府部门是否反@', '政府部门反@帖子内容', '政府部门是否转发', '政府部门转发帖子内容', '政府部门是否在投诉帖评论',
+              '政府评论内容', '政府部门是否发布回应通告', '通告内容',
+              '中央政府是否@政府帐号', '中央政府表述内容', '上级政府是否@政府帐号', '上级政府表述内容',
+              '下级政府是否@政府帐号', '下级政府表述内容']
+    writer = csv.writer(open(output_path, 'w'))
+
+    market_reader = csv.reader(open('data/market_enterprise_new.csv', 'r'))
+    market_enterprise = []
+    for row in market_reader:
+        market_enterprise.append(row[2])
+
+    count = 0
+    no_data_list = []
+    first_row = True
+    for row in reader:
+        if first_row:
+            first_row = False
+            writer.writerow(titles)
+            continue
+
+        market = 1 if row[5] in market_enterprise else 0
+        info = user_data.get(row[1])
+
+        if not info:
+            print '----' + row[1]
+            count += 1
+            row[2] = '否'
+            no_data_list.append(row[1])
+            row.insert(3, '')
+            row.insert(12, market)
+        else:
+            row[2] = info[0]
+            row.insert(3, info[1])
+            row.insert(12, market)
+        writer.writerow(row)
+    print count
+    print len(set(no_data_list))
+
+
+# format_list_input('data/model_input_list.csv')
+add_extra_info('data/model_input_list_new.csv')

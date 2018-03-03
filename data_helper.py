@@ -11,6 +11,19 @@ def print_list(data):
     print json.dumps(data, ensure_ascii=False)
 
 
+def get_user_data(path):
+    """
+    获取用户的信息 key-用户名 value-[是否认证, 认证类型(机构/个人)]
+    :param path:
+    :return:
+    """
+    data = {}
+    reader = csv.reader(open(path, 'r'))
+    for row in reader:
+        data[row[0]] = [row[2], row[3]]
+    return data
+
+
 def get_pgdp(data, year, enterprise_province, gov_location):
     """
     根据地点获取人均gdp数据 如果有精确到市的数据 选择市的 如果没有选择省的

@@ -1,6 +1,9 @@
 # -*- coding:utf-8 -*-
 
 import csv
+
+import datetime
+
 from data_helper import get_gov_level_data
 from data_helper import get_weibo_data
 from data_helper import get_gov_reply_data
@@ -28,6 +31,17 @@ from data_helper import get_enterprise_data
 
 注：政府部门级别  三类，即省级（直辖市、自治区）；市级（地级市、地区、自治州、盟）；县级（市辖区、县、自治县、县级市、旗、自治旗、林区、特区）
 """
+
+
+# def time_in_range(x, y):
+#     """
+#     :param x: 回复的时间
+#     :param y: 原微博发布的时间
+#     :return:  回复时间是否再原微博发布的时间后的两月以内
+#     """
+#     d1 = datetime.datetime.strptime(x, '%Y-%m-%d %H:%M:%S')
+#     d2 = datetime.datetime.strptime(y, '%Y-%m-%d %H:%M:%S')
+#     return -30 <= (d1 - d2).days < 0
 
 
 def format_data(output_path):
